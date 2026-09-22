@@ -49,3 +49,12 @@ export {
   unpinAlignedBrContainers,
 } from "./justified-text";
 export type { JustifyCapabilities } from "./justified-text";
+
+// Reader theme styles & container overrides
+export {
+  buildThemeOverrideCss,
+  getReaderThemeColors,
+  READER_THEME_COLORS,
+} from "./theme-styles";
+export type { ReaderTheme, ReaderThemeColors } from "./theme-styles";
+

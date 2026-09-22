@@ -21,6 +21,11 @@ import {
   unpinAlignedBrContainers,
   type JustifyCapabilities,
 } from "@readany/core/reader/justified-text";
+import {
+  buildThemeOverrideCss,
+  READER_THEME_COLORS,
+  type ReaderTheme,
+} from "@readany/core/reader";
 import { Overlayer } from "foliate-js/overlayer.js";
 import { marked } from "marked";
 /**
@@ -40,13 +45,9 @@ import { marked } from "marked";
  */
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
-type AppTheme = "light" | "dark" | "sepia";
+type AppTheme = ReaderTheme;
 
-const THEME_COLORS: Record<AppTheme, { bg: string; fg: string; link: string }> = {
-  light: { bg: "#ffffff", fg: "#1a1a1a", link: "#2563eb" },
-  dark: { bg: "#121212", fg: "#f5f5f5", link: "#60a5fa" },
-  sepia: { bg: "#f0e6d2", fg: "#3d2b1f", link: "#6b4c2a" },
-};
+const THEME_COLORS = READER_THEME_COLORS;
 
 const READER_OVERRIDE_STYLE_ID = "__readany_reader_overrides__";
 
@@ -3491,6 +3492,12 @@ body *:not(svg):not(svg *):not(math):not(math *):not(pre):not(pre *):not(code):n
   return `${settings.customFontFaceCSS ? `/* Custom font faces */\n${settings.customFontFaceCSS}\n\n` : ""}/* Font styles */
 html {
   --theme-bg-color: ${bgColor};
+  --theme-fg-color: ${fgColor};
+  --theme-link-color: ${linkColor};
+  --theme-card-bg-color: ${colors.card};
+  --theme-card-fg-color: ${colors.cardFg};
+  --theme-border-color: ${colors.border};
+  --theme-muted-bg-color: ${colors.muted};
   --readany-font-family: ${fontFamily};
   --serif-font: "${fontTheme.serif}";
   --sans-serif-font: "${fontTheme.sansSerif}";
@@ -3564,6 +3571,7 @@ pre {
   tab-size: 2;
 }
 
+${buildThemeOverrideCss(theme, colors)}
 ${settings.justifyBodyText !== false ? getJustifyCss() : ""}
 `;
 }

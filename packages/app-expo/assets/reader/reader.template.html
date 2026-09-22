@@ -2330,12 +2330,47 @@
         /\/\* __theme_colors__ \*\/[\s\S]*?\/\* __end_theme_colors__ \*\//g,
         '',
       );
+      const darkTheme = getColorLuminance(bg) < 0.35;
+      const isSepia = !darkTheme && (bg.includes('240') || bg.includes('f0') || bg.toLowerCase().includes('sepia') || bg === '#f0e6d2');
+      const cardBg = darkTheme ? '#1e1e1e' : (isSepia ? '#f5ebd7' : '#f8f9fa');
+      const borderColor = darkTheme ? '#333333' : (isSepia ? '#d4c4a8' : '#e5e7eb');
+      const zebraBg = darkTheme ? 'rgba(255, 255, 255, 0.04)' : (isSepia ? 'rgba(61, 43, 31, 0.04)' : 'rgba(0, 0, 0, 0.03)');
+      const containerOverrides = (darkTheme || isSepia) ? `
+aside, div.sidebar, .sidebar, aside[data-type="sidebar"], [data-type="sidebar"], [epub\\:type~="sidebar"], div.callout, .callout, [data-type="callout"], div.note, .note, [data-type="note"], [epub\\:type~="note"], div.tip, .tip, [data-type="tip"], [epub\\:type~="tip"], div.warning, .warning, [data-type="warning"], [epub\\:type~="warning"], div.caution, .caution, [data-type="caution"], [epub\\:type~="caution"], div.important, .important, [data-type="important"], [epub\\:type~="important"], .infobox, .boxedtext, .boxed-text, .card {
+  background-color: ${cardBg} !important;
+  border-color: ${borderColor} !important;
+  color: ${fg} !important;
+}
+aside:has(.sidebar) { background-color: transparent !important; border: none !important; }
+.sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6,
+aside h1, aside h2, aside h3, aside h4, aside h5, aside h6,
+[data-type="sidebar"] h1, [data-type="sidebar"] h2, [data-type="sidebar"] h3,
+div.callout h1, div.callout h2, div.callout h3,
+div.note h1, div.note h2, div.note h3,
+div.tip h1, div.tip h2, div.tip h3 {
+  color: ${fg} !important;
+}
+tr:nth-of-type(even), tr:nth-child(even) { background-color: ${zebraBg} !important; }
+th, td { border-color: ${borderColor} !important; }
+div.index h3 { background-color: ${cardBg} !important; color: ${fg} !important; }
+${darkTheme ? `
+pre code.hll { background-color: rgba(234, 179, 8, 0.25) !important; color: #fef08a !important; }
+pre code.gd { background-color: rgba(239, 68, 68, 0.25) !important; color: #fca5a5 !important; }
+pre code.gi { background-color: rgba(34, 197, 94, 0.25) !important; color: #86efac !important; }
+*[style*="background: #fff"], *[style*="background:#fff"], *[style*="background: white"], *[style*="background-color: #fff"], *[style*="background-color:#fff"], *[style*="background-color: white"], *[style*="background-color: #f7f7f7"], *[style*="background-color:#f7f7f7"], *[style*="background-color: #F7F7F7"], *[style*="background-color:#F7F7F7"] {
+  background-color: ${cardBg} !important;
+  color: ${fg} !important;
+}
+` : ''}
+` : '';
+
       const themeBlock = `/* __theme_colors__ */
 html, body {
   background-color: ${bg} !important;
   color: ${fg} !important;
 }
 ::selection { background: rgba(59, 130, 246, 0.3) !important; }
+${containerOverrides}
 /* __end_theme_colors__ */`;
       return themeBlock + '\n' + cleaned;
     }
