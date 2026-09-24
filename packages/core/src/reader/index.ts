@@ -2,8 +2,16 @@
 export { FONT_THEMES, DEFAULT_FONT_THEME, getFontTheme } from "./font-themes";
 
 // Keyboard shortcuts
-export { DEFAULT_BINDINGS, isInputElement, matchBinding, findAction } from "./keyboard";
-export type { KeyBinding } from "./keyboard";
+export {
+  DEFAULT_BINDINGS,
+  isInputElement,
+  matchBinding,
+  findAction,
+  formatKeyBinding,
+  getKeymapByCategory,
+  shouldIgnoreKeyboardShortcut,
+} from "./keyboard";
+export type { KeyBinding, KeymapCategory } from "./keyboard";
 
 // Table of contents
 export { getFirstTocHref } from "./toc";
@@ -53,8 +61,15 @@ export type { JustifyCapabilities } from "./justified-text";
 // Reader theme styles & container overrides
 export {
   buildThemeOverrideCss,
+  getEquationAndContainerBaseCss,
   getReaderThemeColors,
   READER_THEME_COLORS,
 } from "./theme-styles";
 export type { ReaderTheme, ReaderThemeColors } from "./theme-styles";
 
+// Math & document sanitization (repairing mojibake in MathML / EPUBs)
+export {
+  decodeMojibakeInText,
+  sanitizeMathMojibake,
+  tryDecodeMojibake,
+} from "./math-sanitizer";

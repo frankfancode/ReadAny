@@ -1556,6 +1556,9 @@
           const { doc, index, primary } = e.detail;
           markLoaded();
           normalizeBrOnlyParagraphs(doc);
+          sanitizeMathMojibake(doc);
+          wrapStandaloneMathElements(doc);
+          autoFitMathElements(doc);
           if (primary !== false) {
             currentSectionUsesVerticalWriting = !el.isFixedLayout && isVerticalDoc(doc);
             applyRendererFlowMode(el.renderer);
@@ -1985,6 +1988,118 @@
           svg {
             height: auto;
           }
+          /* Container bounds & callouts */
+          aside,
+          div.sidebar,
+          .sidebar,
+          aside[data-type="sidebar"],
+          [data-type="sidebar"],
+          [epub\\:type~="sidebar"],
+          div.callout,
+          .callout,
+          [data-type="callout"],
+          div.note,
+          .note,
+          [data-type="note"],
+          [epub\\:type~="note"],
+          div.tip,
+          .tip,
+          [data-type="tip"],
+          [epub\\:type~="tip"],
+          div.warning,
+          .warning,
+          [data-type="warning"],
+          [epub\\:type~="warning"],
+          div.caution,
+          .caution,
+          [data-type="caution"],
+          [epub\\:type~="caution"],
+          div.important,
+          .important,
+          [data-type="important"],
+          [epub\\:type~="important"],
+          .infobox,
+          .boxedtext,
+          .boxed-text,
+          .card {
+            box-sizing: border-box !important;
+            max-width: 100% !important;
+          }
+          /* Equations & MathML */
+          div[data-type="equation"],
+          div.equation,
+          div.equation-contents,
+          div.informalequation,
+          [data-type="equation"],
+          [data-type="informalequation"],
+          [epub\\:type~="equation"],
+          figure[data-type="equation"],
+          figure.equation,
+          .equation,
+          .equation-contents,
+          .informalequation,
+          .math-display,
+          .display-math,
+          .katex-display,
+          .MathJax_Display,
+          mjx-container[display="true"],
+          .readany-math-wrapper {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch;
+          }
+          math {
+            max-width: 100%;
+            box-sizing: border-box;
+          }
+          /* Neutralize authored viewport units (vw/vh) and excessive sizing on equation math */
+          div[data-type="equation"] math,
+          div.equation math,
+          div.equation-contents math,
+          div.informalequation math,
+          [data-type="equation"] math,
+          [data-type="informalequation"] math,
+          [epub\\:type~="equation"] math,
+          figure[data-type="equation"] math,
+          figure.equation math,
+          .equation math,
+          .equation-contents math,
+          .informalequation math,
+          .math-display math,
+          .display-math math,
+          .katex-display math,
+          .MathJax_Display math,
+          .readany-math-wrapper math,
+          math[display="block"],
+          math.display {
+            font-size: 1em !important;
+            width: max-content;
+            max-width: 100%;
+          }
+          math[display="block"],
+          math.display {
+            display: block !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch;
+          }
+          div[data-type="equation"]::-webkit-scrollbar,
+          div.equation::-webkit-scrollbar,
+          div.informalequation::-webkit-scrollbar,
+          .readany-math-wrapper::-webkit-scrollbar {
+            height: 4px;
+          }
+          div[data-type="equation"]::-webkit-scrollbar-thumb,
+          div.equation::-webkit-scrollbar-thumb,
+          div.informalequation::-webkit-scrollbar-thumb,
+          .readany-math-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.4);
+            border-radius: 2px;
+          }
           ${getVerticalWritingCompatibilityStyles()}
           ${currentJustifyBodyText !== false ? (globalThis.ReadAnyJustifiedText?.getJustifyCss?.() ?? globalThis.ReadAnyJustifiedText?.JUSTIFY_CSS ?? '') : ''}
         `;
@@ -2340,6 +2455,8 @@ aside, div.sidebar, .sidebar, aside[data-type="sidebar"], [data-type="sidebar"],
   background-color: ${cardBg} !important;
   border-color: ${borderColor} !important;
   color: ${fg} !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
 }
 aside:has(.sidebar) { background-color: transparent !important; border: none !important; }
 .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6,
@@ -2568,6 +2685,9 @@ ${containerOverrides}
       `;
       doc.head.appendChild(style);
       compensateDarkText(doc, fg, bg);
+      sanitizeMathMojibake(doc);
+      wrapStandaloneMathElements(doc);
+      autoFitMathElements(doc);
       if (lastRendererStyles) {
         const themedStyles = injectThemeIntoStyles(
           lastRendererStyles,
@@ -2578,6 +2698,209 @@ ${containerOverrides}
         syncReaderOverrideStylesForDoc(doc, themedStyles);
       }
       doc.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); return false; }, true);
+    }
+
+    const CP1252_MAP = {
+      '\u20AC': 0x80, '\u201A': 0x82, '\u0192': 0x83, '\u201E': 0x84,
+      '\u2026': 0x85, '\u2020': 0x86, '\u2021': 0x87, '\u02C6': 0x88,
+      '\u2030': 0x89, '\u0160': 0x8a, '\u2039': 0x8b, '\u0152': 0x8c,
+      '\u017D': 0x8e, '\u2018': 0x91, '\u2019': 0x92, '\u201C': 0x93,
+      '\u201D': 0x94, '\u2022': 0x95, '\u2013': 0x96, '\u2014': 0x97,
+      '\u02DC': 0x98, '\u2122': 0x99, '\u0161': 0x9a, '\u203A': 0x9b,
+      '\u0153': 0x9c, '\u017E': 0x9e, '\u0178': 0x9f
+    };
+
+    function charToByte(char) {
+      const code = char.charCodeAt(0);
+      if (code < 256) return code;
+      if (CP1252_MAP[char] !== undefined) return CP1252_MAP[char];
+      return null;
+    }
+
+    function isValidMojibakeSequence(bytes) {
+      if (bytes.length < 2 || bytes.length > 4) return false;
+      const b0 = bytes[0];
+      if (bytes.length === 2 && !(b0 >= 0xc2 && b0 <= 0xdf)) return false;
+      if (bytes.length === 3 && !(b0 >= 0xe0 && b0 <= 0xef)) return false;
+      if (bytes.length === 4 && !(b0 >= 0xf0 && b0 <= 0xf4)) return false;
+      for (let i = 1; i < bytes.length; i++) {
+        if (bytes[i] < 0x80 || bytes[i] > 0xbf) return false;
+      }
+      return true;
+    }
+
+    function tryDecodeMojibake(str) {
+      if (!str || str.length < 2 || str.length > 4) return null;
+      const bytes = [];
+      for (const ch of str) {
+        const b = charToByte(ch);
+        if (b === null) return null;
+        bytes.push(b);
+      }
+      if (!isValidMojibakeSequence(bytes)) return null;
+      try {
+        const decoded = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+        if (decoded && decoded !== str) return decoded;
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function decodeMojibakeInText(text) {
+      if (!text || text.length < 2) return text;
+      return text.replace(
+        /[\xC2-\xDF][\x80-\xBF\u0100-\u2122]|[\xE0-\xEF][\x80-\xBF\u0100-\u2122]{2}|[\xF0-\xF4][\x80-\xBF\u0100-\u2122]{3}/g,
+        (match) => tryDecodeMojibake(match) || match
+      );
+    }
+
+    const MATH_LEAF_TAGS = new Set(['mi', 'mo', 'mn', 'mtext']);
+
+    function getElementChildren(node) {
+      const elements = [];
+      const children = node.childNodes;
+      if (!children) return elements;
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].nodeType === 1) elements.push(children[i]);
+      }
+      return elements;
+    }
+
+    function sanitizeMathSubtree(doc, parent) {
+      const childElements = getElementChildren(parent);
+      for (const child of childElements) {
+        if (child.childNodes && child.childNodes.length > 0) {
+          sanitizeMathSubtree(doc, child);
+        }
+      }
+      const children = getElementChildren(parent);
+      let i = 0;
+      while (i < children.length) {
+        let matched = false;
+        const maxLen = Math.min(4, children.length - i);
+        for (let len = maxLen; len >= 2; len--) {
+          const slice = children.slice(i, i + len);
+          const allLeaves = slice.every(
+            (el) => MATH_LEAF_TAGS.has((el.localName || el.nodeName).toLowerCase()) && getElementChildren(el).length === 0
+          );
+          if (allLeaves) {
+            const combinedText = slice.map((el) => el.textContent || '').join('');
+            const decoded = tryDecodeMojibake(combinedText);
+            if (decoded) {
+              const isPunctuationOrOp = decoded === '…' || decoded === '’' || decoded === '′' || decoded === '–' || decoded === '—';
+              const tag = isPunctuationOrOp ? 'mo' : (slice[0].localName || slice[0].nodeName).toLowerCase();
+              const replacement = doc.createElementNS
+                ? doc.createElementNS('http://www.w3.org/1998/Math/MathML', tag)
+                : doc.createElement(tag);
+              replacement.textContent = decoded === '’' ? '′' : decoded;
+              parent.insertBefore(replacement, slice[0]);
+              for (const el of slice) parent.removeChild(el);
+              children.splice(i, len, replacement);
+              matched = true;
+              break;
+            }
+          }
+        }
+        if (!matched) {
+          const el = children[i];
+          if (getElementChildren(el).length === 0 && el.textContent) {
+            const decoded = tryDecodeMojibake(el.textContent);
+            if (decoded) {
+              el.textContent = decoded === '’' ? '′' : decoded;
+            } else {
+              const inTextDecoded = decodeMojibakeInText(el.textContent);
+              if (inTextDecoded !== el.textContent) el.textContent = inTextDecoded;
+            }
+          }
+          i++;
+        }
+      }
+    }
+
+    function sanitizeMathMojibake(doc) {
+      if (!doc) return;
+      const mathList = doc.getElementsByTagName ? doc.getElementsByTagName('math') : doc.querySelectorAll('math');
+      if (!mathList || mathList.length === 0) return;
+      for (const math of Array.from(mathList)) {
+        const alttext = math.getAttribute && math.getAttribute('alttext');
+        if (alttext) {
+          const sanitizedAlt = decodeMojibakeInText(alttext);
+          if (sanitizedAlt !== alttext) math.setAttribute('alttext', sanitizedAlt);
+        }
+        sanitizeMathSubtree(doc, math);
+      }
+    }
+
+    const MATH_CONTAINER_SELECTOR =
+      'div[data-type="equation"], div.equation, div.equation-contents, div.informalequation, [data-type="equation"], [data-type="informalequation"], figure[data-type="equation"], figure.equation, .equation, .equation-contents, .informalequation, .math-display, .display-math, .readany-math-wrapper';
+
+    function autoFitMathElements(doc) {
+      if (!doc) return;
+      const run = () => {
+        const mathNodes = doc.querySelectorAll('math');
+        for (const math of mathNodes) {
+          const container =
+            math.closest(MATH_CONTAINER_SELECTOR) ||
+            (math.getAttribute('display') === 'block' ? math.parentElement : null);
+          if (!container) continue;
+
+          math.style.transform = '';
+          math.style.transformOrigin = '';
+          math.style.maxWidth = 'none';
+          math.style.width = 'max-content';
+
+          const containerWidth = container.clientWidth;
+          const mathWidth = Math.max(
+            math.scrollWidth,
+            math.getBoundingClientRect().width,
+            math.firstElementChild ? math.firstElementChild.getBoundingClientRect().width : 0
+          );
+
+          if (containerWidth > 0 && mathWidth > containerWidth) {
+            const scale = Math.max(0.6, (containerWidth - 6) / mathWidth);
+            math.style.transformOrigin = 'left center';
+            math.style.transform = 'scale(' + scale + ')';
+            math.style.maxWidth = '';
+          } else {
+            math.style.transform = '';
+            math.style.transformOrigin = '';
+            math.style.maxWidth = '';
+          }
+        }
+      };
+
+      run();
+      if (doc.fonts && doc.fonts.ready) {
+        doc.fonts.ready.then(() => {
+          requestAnimationFrame(run);
+        });
+      } else {
+        setTimeout(run, 100);
+      }
+    }
+
+    function wrapStandaloneMathElements(doc) {
+      if (!doc) return;
+      const mathElements = doc.querySelectorAll('math');
+      for (const math of mathElements) {
+        if (math.closest(MATH_CONTAINER_SELECTOR)) continue;
+        const isBlock =
+          math.getAttribute('display') === 'block' ||
+          math.classList.contains('display') ||
+          Boolean(
+            math.parentElement &&
+              math.parentElement.children.length === 1 &&
+              !math.parentElement.textContent.replace(math.textContent || '', '').trim()
+          );
+
+        if (isBlock && math.parentNode) {
+          const wrapper = doc.createElement('div');
+          wrapper.className = 'readany-math-wrapper';
+          math.parentNode.insertBefore(wrapper, math);
+          wrapper.appendChild(math);
+        }
+      }
     }
 
     function isImageOnlyAnchor(anchor) {

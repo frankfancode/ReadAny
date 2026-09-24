@@ -106,6 +106,8 @@ div.important,
   background-color: ${colors.card} !important;
   border-color: ${colors.border} !important;
   color: ${colors.cardFg} !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
 }
 
 aside:has(.sidebar) {
@@ -216,6 +218,8 @@ div.important,
   background-color: ${colors.card} !important;
   border-color: ${colors.border} !important;
   color: ${colors.cardFg} !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
 }
 
 aside:has(.sidebar) {
@@ -242,4 +246,130 @@ div.index h3 {
   }
 
   return "";
+}
+
+/**
+ * Base CSS rules for equations, MathML, and authored containers across all themes.
+ * Prevents equations, math formulas, and callouts from overflowing or bleeding into adjacent columns.
+ */
+export function getEquationAndContainerBaseCss(): string {
+  return `
+/* ── Authored containers & callout boxes containment ── */
+aside,
+div.sidebar,
+.sidebar,
+aside[data-type="sidebar"],
+[data-type="sidebar"],
+[epub\\:type~="sidebar"],
+div.callout,
+.callout,
+[data-type="callout"],
+div.note,
+.note,
+[data-type="note"],
+[epub\\:type~="note"],
+div.tip,
+.tip,
+[data-type="tip"],
+[epub\\:type~="tip"],
+div.warning,
+.warning,
+[data-type="warning"],
+[epub\\:type~="warning"],
+div.caution,
+.caution,
+[data-type="caution"],
+[epub\\:type~="caution"],
+div.important,
+.important,
+[data-type="important"],
+[epub\\:type~="important"],
+.infobox,
+.boxedtext,
+.boxed-text,
+.card {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+/* ── Equations and MathML overflow containment ── */
+div[data-type="equation"],
+div.equation,
+div.equation-contents,
+div.informalequation,
+[data-type="equation"],
+[data-type="informalequation"],
+[epub\\:type~="equation"],
+figure[data-type="equation"],
+figure.equation,
+.equation,
+.equation-contents,
+.informalequation,
+.math-display,
+.display-math,
+.katex-display,
+.MathJax_Display,
+mjx-container[display="true"],
+.readany-math-wrapper {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+math {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Neutralize authored viewport units (vw/vh) and excessive sizing on equation math */
+div[data-type="equation"] math,
+div.equation math,
+div.equation-contents math,
+div.informalequation math,
+[data-type="equation"] math,
+[data-type="informalequation"] math,
+[epub\\:type~="equation"] math,
+figure[data-type="equation"] math,
+figure.equation math,
+.equation math,
+.equation-contents math,
+.informalequation math,
+.math-display math,
+.display-math math,
+.katex-display math,
+.MathJax_Display math,
+.readany-math-wrapper math,
+math[display="block"],
+math.display {
+  font-size: 1em !important;
+  width: max-content;
+  max-width: 100%;
+}
+
+math[display="block"],
+math.display {
+  display: block !important;
+  box-sizing: border-box !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Subtle scrollbars for overflowing equations */
+div[data-type="equation"]::-webkit-scrollbar,
+div.equation::-webkit-scrollbar,
+div.informalequation::-webkit-scrollbar,
+.readany-math-wrapper::-webkit-scrollbar {
+  height: 4px;
+}
+div[data-type="equation"]::-webkit-scrollbar-thumb,
+div.equation::-webkit-scrollbar-thumb,
+div.informalequation::-webkit-scrollbar-thumb,
+.readany-math-wrapper::-webkit-scrollbar-thumb {
+  background: var(--theme-border-color, rgba(128, 128, 128, 0.4));
+  border-radius: 2px;
+}
+`;
 }

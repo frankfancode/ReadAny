@@ -23,8 +23,10 @@ import {
 } from "@readany/core/reader/justified-text";
 import {
   buildThemeOverrideCss,
+  getEquationAndContainerBaseCss,
   READER_THEME_COLORS,
   type ReaderTheme,
+  sanitizeMathMojibake,
 } from "@readany/core/reader";
 import { Overlayer } from "foliate-js/overlayer.js";
 import { marked } from "marked";
@@ -3053,6 +3055,10 @@ export const FoliateViewer = forwardRef<FoliateViewerHandle, FoliateViewerProps>
         const view = viewRef.current;
         if (view?.renderer && !isFixedLayout) {
           applyRendererSettings(view, viewSettings, false, appTheme);
+          for (const content of getRendererContents(view)) {
+            const doc = content?.doc as Document | undefined;
+            if (doc) autoFitMathElements(doc);
+          }
         }
       };
       window.addEventListener("resize", handleResize);
@@ -3186,12 +3192,86 @@ function applyDocumentStyles(
   }
 
   normalizeBrOnlyParagraphs(doc);
+  sanitizeMathMojibake(doc);
+  wrapStandaloneMathElements(doc);
+  autoFitMathElements(doc);
   syncRemoteFontStylesInDocument(doc, settings.customFontCssUrls);
   // Unify justify state: tag vertical/fixed roots, unpin (clean undo), then
   // pin author-aligned <br> blocks BEFORE the override stylesheet (which
   // carries the justify fallback) so getComputedStyle sees the book's own CSS.
   syncJustifyForDoc(doc, settings.justifyBodyText !== false);
   syncReaderOverrideStylesInDocument(doc, getRendererStyles(settings, theme));
+}
+
+const MATH_CONTAINER_SELECTOR =
+  'div[data-type="equation"], div.equation, div.equation-contents, div.informalequation, [data-type="equation"], [data-type="informalequation"], figure[data-type="equation"], figure.equation, .equation, .equation-contents, .informalequation, .math-display, .display-math, .readany-math-wrapper';
+
+function autoFitMathElements(doc: Document) {
+  const run = () => {
+    const mathNodes = doc.querySelectorAll<HTMLElement>("math");
+    for (const math of mathNodes) {
+      const container =
+        math.closest<HTMLElement>(MATH_CONTAINER_SELECTOR) ||
+        (math.getAttribute("display") === "block" ? (math.parentElement as HTMLElement | null) : null);
+      if (!container) continue;
+
+      math.style.transform = "";
+      math.style.transformOrigin = "";
+      math.style.maxWidth = "none";
+      math.style.width = "max-content";
+
+      const containerWidth = container.clientWidth;
+      const mathWidth = Math.max(
+        math.scrollWidth,
+        math.getBoundingClientRect().width,
+        math.firstElementChild ? (math.firstElementChild as HTMLElement).getBoundingClientRect().width : 0,
+      );
+
+      if (containerWidth > 0 && mathWidth > containerWidth) {
+        const scale = Math.max(0.6, (containerWidth - 6) / mathWidth);
+        math.style.transformOrigin = "left center";
+        math.style.transform = `scale(${scale})`;
+        math.style.maxWidth = "";
+      } else {
+        math.style.transform = "";
+        math.style.transformOrigin = "";
+        math.style.maxWidth = "";
+      }
+    }
+  };
+
+  run();
+  if (doc.fonts?.ready) {
+    void doc.fonts.ready.then(() => {
+      requestAnimationFrame(run);
+    });
+  } else {
+    setTimeout(run, 100);
+  }
+}
+
+function wrapStandaloneMathElements(doc: Document) {
+  const mathElements = doc.querySelectorAll("math");
+  for (const math of mathElements) {
+    if (math.closest(MATH_CONTAINER_SELECTOR)) {
+      continue;
+    }
+    const isBlock =
+      math.getAttribute("display") === "block" ||
+      math.classList.contains("display") ||
+      Boolean(
+        math.parentElement &&
+          math.parentElement.children.length === 1 &&
+          !math.parentElement.textContent?.replace(math.textContent || "", "").trim(),
+      );
+
+    if (isBlock && math.parentNode) {
+      const wrapper = doc.createElement("div");
+      wrapper.className = "readany-math-wrapper";
+      math.parentNode.insertBefore(wrapper, math);
+      wrapper.appendChild(math);
+    }
+  }
 }
 
 function syncReaderOverrideStylesInDocument(doc: Document, css: string) {
@@ -3571,6 +3651,7 @@ pre {
   tab-size: 2;
 }
 
+${getEquationAndContainerBaseCss()}
 ${buildThemeOverrideCss(theme, colors)}
 ${settings.justifyBodyText !== false ? getJustifyCss() : ""}
 `;
@@ -3615,7 +3696,12 @@ function applyRendererStyles(
   // disabled), then re-pin author-aligned <br>-containing blocks.
   for (const content of getRendererContents(view)) {
     const doc = content?.doc as Document | undefined;
-    if (doc) syncJustifyForDoc(doc, settings.justifyBodyText !== false);
+    if (doc) {
+      sanitizeMathMojibake(doc);
+      syncJustifyForDoc(doc, settings.justifyBodyText !== false);
+      wrapStandaloneMathElements(doc);
+      autoFitMathElements(doc);
+    }
   }
   renderer.setStyles(styles);
   syncReaderOverrideStyles(view, styles);
