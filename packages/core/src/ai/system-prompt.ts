@@ -590,7 +590,7 @@ function buildConstraintsSection(
     : "- When citing book content, do not use clickable [N] markers unless the citation tool is available; use plain chapter names/indices and quoted excerpts instead";
   const lines = [
     "## Response Guidelines",
-    `- **IMPORTANT: You MUST respond in ${language || "English"}. This is non-negotiable regardless of the book's language.**`,
+    `- **Language Policy**: Default to responding in ${language || "English"} regardless of the book's language. However, always adapt to the user: if the user writes in another language or explicitly requests a specific language (e.g., "explain in Chinese", "用中文解释", "speak in English"), you MUST prioritize the user's requested language.`,
     citationGuideline,
     "- Keep responses concise unless the user asks for detailed analysis",
     "- Use markdown formatting for readability",

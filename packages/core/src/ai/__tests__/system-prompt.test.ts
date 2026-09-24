@@ -133,4 +133,20 @@ describe("buildSystemPrompt citations", () => {
     expect(prompt).not.toContain("addCitation");
     expect(prompt).not.toContain("mindmap");
   });
+
+  it("includes an adaptive language policy prioritizing user requested language", () => {
+    const prompt = buildSystemPrompt({
+      book: makeBook(),
+      semanticContext: null,
+      enabledSkills: [],
+      isVectorized: true,
+      userLanguage: "en",
+    });
+
+    expect(prompt).toContain("Language Policy");
+    expect(prompt).toContain("Default to responding in en regardless of the book's language");
+    expect(prompt).toContain("always adapt to the user");
+    expect(prompt).toContain("prioritize the user's requested language");
+    expect(prompt).not.toContain("This is non-negotiable");
+  });
 });
