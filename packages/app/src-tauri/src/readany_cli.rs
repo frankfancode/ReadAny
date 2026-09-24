@@ -1360,6 +1360,15 @@ mod tests {
         let config: serde_json::Value =
             serde_json::from_str(&config).expect("parse tauri.conf.json");
 
+        let before_dev = config
+            .pointer("/build/beforeDevCommand")
+            .and_then(serde_json::Value::as_str)
+            .expect("beforeDevCommand");
+        assert!(
+            before_dev.contains("pnpm --filter @readany/cli build"),
+            "Tauri beforeDevCommand must build the bundled CLI before starting dev",
+        );
+
         let before_build = config
             .pointer("/build/beforeBuildCommand")
             .and_then(serde_json::Value::as_str)
