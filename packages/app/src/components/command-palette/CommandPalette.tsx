@@ -149,6 +149,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const { t } = useTranslation();
   const setShowSettings = useAppStore((s) => s.setShowSettings);
+  const setShowKeymapDialog = useAppStore((s) => s.setShowKeymapDialog);
 
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -221,6 +222,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         action: () => openSettingsTab("externalAi"),
       },
       {
+        id: "settings.keymap",
+        label: t("settings.keymap_title"),
+        keywords: ["keymap", "keyboard", "shortcuts", "hotkeys", "bindings", "keys"],
+        category: "settings",
+        icon: Keyboard,
+        action: () => openSettingsTab("keymap"),
+      },
+      {
         id: "settings.about",
         label: t("settings.about"),
         keywords: ["about", "version", "info"],
@@ -275,6 +284,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         },
       },
       {
+        id: "action.keymap",
+        label: t("settings.keymapQuickDialog"),
+        keywords: ["keymap", "shortcuts", "cheat sheet", "keyboard shortcuts", "hotkeys"],
+        category: "actions",
+        icon: Keyboard,
+        action: () => {
+          setShowKeymapDialog(true);
+          onClose();
+        },
+        shortcut: "?",
+      },
+      {
         id: "action.shortcuts",
         label: t("commandPalette.placeholder"),
         keywords: ["command", "palette", "shortcut", "keyboard"],
@@ -286,7 +307,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         shortcut: "⌘⇧P",
       },
     ];
-  }, [t, setShowSettings, onClose]);
+  }, [t, setShowSettings, setShowKeymapDialog, onClose]);
 
   // Search results
   const results = useMemo(() => searchCommands(query, commands), [query, commands]);

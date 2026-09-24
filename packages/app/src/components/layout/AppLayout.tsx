@@ -23,10 +23,12 @@ import { NotesPage } from "@/components/notes/NotesPage";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { ReaderView, evictBlobCache } from "@/components/reader/ReaderView";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { KeymapDialog } from "@/components/common/KeymapDialog";
 import { MissingBookPromptDialog } from "@/components/shared/MissingBookPromptDialog";
 import { ReadingStatsPanel } from "@/components/stats/ReadingStatsPanel";
 import { FloatingTTSBubble } from "@/components/tts/FloatingTTSBubble";
 import { toggleWindowFullscreen } from "@/lib/window-fullscreen";
+import { isInputElement } from "@readany/core/reader";
 import SkillsPage from "@/pages/Skills";
 import { useAppStore } from "@/stores/app-store";
 import { useLibraryStore } from "@/stores/library-store";
@@ -59,6 +61,8 @@ export function AppLayout() {
   const activeTabId = useAppStore((s) => s.activeTabId);
   const showSettings = useAppStore((s) => s.showSettings);
   const setShowSettings = useAppStore((s) => s.setShowSettings);
+  const showKeymapDialog = useAppStore((s) => s.showKeymapDialog);
+  const setShowKeymapDialog = useAppStore((s) => s.setShowKeymapDialog);
   const initTab = useReaderStore((s) => s.initTab);
   const readerStoreTabs = useReaderStore((s) => s.tabs);
   const books = useLibraryStore((s) => s.books);
@@ -157,6 +161,19 @@ export function AppLayout() {
         e.stopPropagation();
         toggleCommandPalette();
       }
+      if (isCmdOrCtrl && e.key === ",") {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowSettings(true);
+      }
+      if (
+        (isCmdOrCtrl && e.key === "/") ||
+        (e.key === "?" && !isInputElement(e.target))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowKeymapDialog(true);
+      }
       if (e.key === "F11") {
         e.preventDefault();
         import("@tauri-apps/api/window")
@@ -169,7 +186,7 @@ export function AppLayout() {
     };
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [toggleCommandPalette]);
+  }, [toggleCommandPalette, setShowSettings, setShowKeymapDialog]);
 
   useEffect(() => {
     if (!isReaderActive) return;
@@ -410,6 +427,7 @@ export function AppLayout() {
       </main>
       <MissingBookPromptDialog />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
+      <KeymapDialog open={showKeymapDialog} onClose={() => setShowKeymapDialog(false)} />
       <CommandPalette open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
       <FloatingTTSBubble />
     </div>

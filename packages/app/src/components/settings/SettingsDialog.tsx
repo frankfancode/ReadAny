@@ -12,6 +12,7 @@ import { AboutSettings } from "./AboutSettings";
 import { FeedbackSettings } from "./FeedbackSettings";
 import { FontSettings } from "./FontSettings";
 import { GeneralSettings } from "./GeneralSettings";
+import { KeymapSettings } from "./KeymapSettings";
 import { ExternalAISettings } from "./ExternalAISettings";
 import { ReadSettingsPanel } from "./ReadSettings";
 import { SyncSettings } from "./SyncSettings";
@@ -28,6 +29,7 @@ const TAB_IDS: SettingsTab[] = [
   "general",
   "reading",
   "fonts",
+  "keymap",
   "ai",
   "vectorModel",
   "tts",
@@ -41,6 +43,7 @@ const TAB_KEYS: Record<SettingsTab, string> = {
   general: "settings.general",
   reading: "settings.reading",
   fonts: "settings.fonts",
+  keymap: "settings.keymap",
   ai: "settings.ai",
   vectorModel: "settings.vectorModel",
   tts: "settings.tts",
@@ -118,6 +121,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             {settingsTab === "general" && <GeneralSettings />}
             {settingsTab === "reading" && <ReadSettingsPanel />}
             {settingsTab === "fonts" && <FontSettings />}
+            {settingsTab === "keymap" && <KeymapSettings />}
             {settingsTab === "ai" && <AISettings />}
             {settingsTab === "vectorModel" && <VectorModelSettings />}
             {settingsTab === "tts" && <TTSSettings />}

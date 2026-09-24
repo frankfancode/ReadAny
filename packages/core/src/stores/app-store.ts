@@ -23,6 +23,7 @@ export type SettingsTab =
   | "general"
   | "reading"
   | "fonts"
+  | "keymap"
   | "ai"
   | "vectorModel"
   | "tts"
@@ -39,6 +40,7 @@ export interface AppState {
   sidebarTab: SidebarTab;
   showSettings: boolean;
   settingsTab: SettingsTab;
+  showKeymapDialog: boolean;
 
   // Actions
   addTab: (tab: Tab) => void;
@@ -48,6 +50,7 @@ export interface AppState {
   toggleSidebar: () => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setShowSettings: (show: boolean, tab?: SettingsTab) => void;
+  setShowKeymapDialog: (show: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -57,6 +60,7 @@ export const useAppStore = create<AppState>((set) => ({
   sidebarTab: "chat",
   showSettings: false,
   settingsTab: "general",
+  showKeymapDialog: false,
 
   addTab: (tab) =>
     set((state) => {
@@ -114,4 +118,5 @@ export const useAppStore = create<AppState>((set) => ({
   setSidebarTab: (tab) => set({ sidebarTab: tab, sidebarOpen: true }),
 
   setShowSettings: (show, tab) => set({ showSettings: show, settingsTab: tab ?? "general" }),
+  setShowKeymapDialog: (show) => set({ showKeymapDialog: show }),
 }));
